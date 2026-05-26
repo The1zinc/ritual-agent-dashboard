@@ -1,0 +1,67 @@
+// ──────────────────────────────────────────────
+//  Ritual Agent Dashboard — Prisma Schema
+//  Database: Neon PostgreSQL (via Vercel integration)
+// ──────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Agent {
+  id                        String     @id @default(cuid())
+  address                   String     @unique
+  owner                     String     // wallet address of deployer
+  status                    String     @default("spawning")
+
+  // Soul
+  soulName                  String
+  soulPurpose               String
+  soulConstraints           String     @default("")
+  soulModel                 String     @default("ritual-llm-v1")
+
+  // Memory
+  memoryType                String     @default("persistent")
+  memoryInitialKnowledge    String     @default("")
+  memoryConvoHistory        Boolean    @default(true)
+  memoryMaxTokens           Int        @default(4096)
+
+  // Storage
+  storageProvider           String     @default("ipfs")
+  storageCheckpointInterval Int        @default(300)
+  storageRestoreFromCid     String     @default("")
+
+  // State
+  cid                       String     @default("")
+  uptimeSeconds             Int        @default(0)
+  totalActions              Int        @default(0)
+  memorySize                Int        @default(0)
+  lastCheckpoint            DateTime?
+  balance                   String     @default("0")
+
+  // Timestamps
+  createdAt                 DateTime   @default(now())
+  lastActiveAt              DateTime   @default(now())
+
+  // Relations
+  logs                      AgentLog[]
+
+  @@index([owner])
+  @@index([status])
+}
+
+model AgentLog {
+  id        String   @id @default(cuid())
+  agentId   String
+  level     String   // info | warn | error | action | system
+  message   String
+  timestamp DateTime @default(now())
+
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, timestamp])
+}
