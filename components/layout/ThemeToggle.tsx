@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Check initial preference from localStorage or default system settings
@@ -11,11 +12,17 @@ export default function ThemeToggle() {
     const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     const initialTheme = (storedTheme as 'dark' | 'light') || systemTheme;
     
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initialTheme);
     if (initialTheme === 'light') {
       document.documentElement.classList.add('light');
     }
+    setMounted(true);
   }, []);
+
+  if (!mounted) {
+    return <div style={{ width: '36px', height: '36px' }} />;
+  }
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';

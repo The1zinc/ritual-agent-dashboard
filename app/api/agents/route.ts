@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { soul, memory, storage } = body;
 
-    // Generate a random Ethereum-style address
-    const address = `0x${Array.from({ length: 40 }, () =>
+    // Use the on-chain agent address if provided, otherwise generate a random one (fallback)
+    const address = body.address || `0x${Array.from({ length: 40 }, () =>
       Math.floor(Math.random() * 16).toString(16)
     ).join('')}`;
 

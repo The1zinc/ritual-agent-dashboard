@@ -129,9 +129,10 @@ export default function CreateAgentPage() {
 
       // 5. Redirect to details dashboard
       router.push(`/agents/${agent.id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to deploy agent:', err);
-      alert(`Deployment failed: ${err.message || err}`);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      alert(`Deployment failed: ${errMsg}`);
     } finally {
       setIsDeploying(false);
     }

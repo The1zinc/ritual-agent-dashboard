@@ -15,8 +15,11 @@ import Link from 'next/link';
 
 export default function AgentDetailPage() {
   const params = useParams();
-  const { getAgent, updateAgentStatus, refresh } = useAgents();
+  const { getAgent, updateAgentStatus, refresh, isLoaded } = useAgents();
   const agent = getAgent(params.id as string);
+  const config = useConfig();
+  const { isConnected } = useAccount();
+  const { writeContractAsync } = useWriteContract();
 
   // Poll for logs and metrics updates while actively viewing the dashboard
   useEffect(() => {
@@ -28,6 +31,15 @@ export default function AgentDetailPage() {
 
     return () => clearInterval(interval);
   }, [agent, refresh]);
+
+  if (!isLoaded) {
+    return (
+      <div className="wizard-container" style={{ maxWidth: '650px', margin: '40px auto', textAlign: 'center', padding: '40px' }}>
+        <div className="pulsing-dot pulsing-dot--checkpointing" style={{ margin: '0 auto 16px' }} />
+        <p style={{ color: 'var(--text-muted)' }}>Loading agent details...</p>
+      </div>
+    );
+  }
 
   if (!agent) {
     return (
@@ -48,10 +60,6 @@ export default function AgentDetailPage() {
 
   const avatarBg = stringToColor(agent.soul.name);
   const initial = agent.soul.name.charAt(0).toUpperCase();
-
-  const config = useConfig();
-  const { isConnected } = useAccount();
-  const { writeContractAsync } = useWriteContract();
 
   const handleAction = async (action: string) => {
     if (!isConnected) {
@@ -101,9 +109,10 @@ export default function AgentDetailPage() {
 
       // 3. Update agent status in Neon DB
       await updateAgentStatus(agent.id, targetStatus);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`Failed to execute action ${action}:`, err);
-      alert(`Transaction failed: ${err.message || err}`);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      alert(`Transaction failed: ${errMsg}`);
     }
   };
 

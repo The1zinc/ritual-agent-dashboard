@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-// @ts-ignore
+// @ts-expect-error - solc does not have typescript declarations in this configuration
 import solc from 'solc';
 
 function compile() {
@@ -36,9 +36,14 @@ function compile() {
   console.log('Compiling AgentDashboard.sol...');
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
 
+  interface SolcError {
+    severity: string;
+    formattedMessage: string;
+  }
+
   if (output.errors) {
     let hasErrors = false;
-    output.errors.forEach((err: any) => {
+    output.errors.forEach((err: SolcError) => {
       console.error(err.formattedMessage);
       if (err.severity === 'error') {
         hasErrors = true;

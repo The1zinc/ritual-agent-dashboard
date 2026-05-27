@@ -63,6 +63,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch agents on mount or when connected wallet address changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAgents();
   }, [fetchAgents]);
 

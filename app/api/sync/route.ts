@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createPublicClient, http } from 'viem';
 import { ritualTestnet } from '@/lib/web3/chains';
 import { AGENT_DASHBOARD_ABI } from '@/lib/web3/precompiles';
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
     const contractAddress = (process.env.NEXT_PUBLIC_DASHBOARD_CONTRACT_ADDRESS ||
       '0xe54D597A8114f6e6Ea50D51bBFFC619A0A86c075') as `0x${string}`;
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest) {
     let syncCount = 0;
 
     for (const log of logs) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { eventName, args } = log as any;
       if (!args || !args.agentId) continue;
 
@@ -240,10 +243,11 @@ export async function GET(request: NextRequest) {
       processedEvents: logs.length,
       databaseUpdates: syncCount,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[GET /api/sync]', error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Failed to sync chain events', details: error.message },
+      { error: 'Failed to sync chain events', details: errorMsg },
       { status: 500 }
     );
   }

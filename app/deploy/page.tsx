@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useDeployContract, useConfig } from 'wagmi';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import WalletConnectBtn from '@/components/layout/WalletConnectBtn';
@@ -14,10 +14,25 @@ export default function DeployContractPage() {
   const { deployContractAsync } = useDeployContract();
   const config = useConfig();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
   const [isDeploying, setIsDeploying] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [deployedAddress, setDeployedAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  if (!mounted) {
+    return (
+      <div className="wizard-container" style={{ maxWidth: '650px', margin: '40px auto', textAlign: 'center', padding: '40px' }}>
+        <div className="pulsing-dot pulsing-dot--checkpointing" style={{ margin: '0 auto 16px' }} />
+        <p style={{ color: 'var(--text-muted)' }}>Loading network state...</p>
+      </div>
+    );
+  }
 
   const handleDeploy = async () => {
     setIsDeploying(true);
@@ -46,9 +61,9 @@ export default function DeployContractPage() {
       } else {
         throw new Error('Contract address not found in transaction receipt');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to deploy contract:', err);
-      setError(err.message || String(err));
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsDeploying(false);
     }

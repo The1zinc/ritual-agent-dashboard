@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useSwitchChain, Connector } from 'wagmi';
 import { truncateAddress } from '@/lib/utils';
 import { ritualTestnet } from '@/lib/web3/chains';
 
@@ -13,6 +13,12 @@ export default function WalletConnectBtn() {
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -25,7 +31,7 @@ export default function WalletConnectBtn() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleConnect = (connector: any) => {
+  const handleConnect = (connector: Connector) => {
     connect({ connector });
     setDropdownOpen(false);
   };
@@ -33,6 +39,29 @@ export default function WalletConnectBtn() {
   const handleSwitchNetwork = () => {
     switchChain({ chainId: ritualTestnet.id });
   };
+
+  if (!mounted) {
+    return (
+      <button
+        className="btn btn-primary"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 18px',
+          borderRadius: 'var(--radius-md)',
+          fontSize: '14px',
+          fontWeight: 600,
+          background: 'var(--gradient-primary)',
+          color: 'white',
+          boxShadow: 'var(--shadow-glow)',
+          border: 'none',
+        }}
+      >
+        🔌 Connect Wallet
+      </button>
+    );
+  }
 
   if (isConnecting) {
     return (
