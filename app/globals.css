@@ -1417,3 +1417,110 @@ a:hover {
   --rk-colors-modalBackground: var(--bg-secondary) !important;
   --rk-radii-modal: var(--radius-xl) !important;
 }
+
+/* ═══════════════════════════════════════════════
+ *  LIGHT MODE THEME
+ * ═══════════════════════════════════════════════ */
+
+html.light, :root.light {
+  /* Background layers */
+  --bg-root: #f5f6fa;
+  --bg-primary: #ffffff;
+  --bg-secondary: #fdfdfd;
+  --bg-elevated: #e4e7eb;
+  --bg-surface: rgba(255, 255, 255, 0.7);
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(139, 92, 246, 0.08);
+  --glass-hover: rgba(139, 92, 246, 0.15);
+  --glass-blur: 24px;
+
+  /* Accent overrides if needed */
+  --accent-primary: #7c3aed; /* Slightly darker violet for light contrast */
+
+  /* Text overrides */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #8894a6;
+  --text-accent: #6d28d9;
+
+  /* Shadow overrides */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(139, 92, 246, 0.06);
+  --shadow-lg: 0 10px 30px rgba(139, 92, 246, 0.1);
+  --shadow-glow: 0 0 25px rgba(139, 92, 246, 0.15);
+}
+
+/* Specific component overrides for Light Mode */
+html.light body::before {
+  background: radial-gradient(ellipse, rgba(139, 92, 246, 0.03) 0%, transparent 70%);
+}
+html.light body::after {
+  background: radial-gradient(ellipse, rgba(6, 214, 160, 0.02) 0%, transparent 70%);
+}
+
+html.light .navbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom-color: rgba(139, 92, 246, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+html.light .form-input,
+html.light .form-textarea,
+html.light .form-select {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #d1d5db;
+}
+
+html.light .form-input:focus,
+html.light .form-textarea:focus,
+html.light .form-select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+html.light .form-select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+html.light .log-feed {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(139, 92, 246, 0.08);
+}
+
+html.light .log-entry:hover {
+  background: rgba(139, 92, 246, 0.03);
+}
+
+html.light .toggle-switch {
+  background: #e2e8f0;
+}
+
+html.light .toggle-switch.active {
+  background: var(--accent-primary);
+}
+
+html.light .step-circle {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+}
+
+html.light .step-circle.active {
+  background: var(--accent-primary);
+  color: white;
+}
+
+html.light .step-circle.completed {
+  background: var(--accent-secondary);
+  color: white;
+}
+
+html.light .review-section {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(139, 92, 246, 0.05);
+}
+

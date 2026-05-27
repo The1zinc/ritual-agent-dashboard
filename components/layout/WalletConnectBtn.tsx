@@ -9,7 +9,7 @@ export default function WalletConnectBtn() {
   const { address, isConnected, isConnecting, chainId } = useAccount();
   const { connect, connectors, error } = useConnect();
   const { disconnect } = useDisconnect();
-  const { switchChain, error: switchError } = useSwitchChain();
+  const { switchChain } = useSwitchChain();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -36,25 +36,50 @@ export default function WalletConnectBtn() {
 
   if (isConnecting) {
     return (
-      <button className="btn btn-secondary" disabled style={{ opacity: 0.8, minWidth: '150px' }}>
+      <button 
+        className="btn" 
+        disabled 
+        style={{ 
+          background: 'var(--glass-bg)',
+          border: '1px solid var(--glass-border)',
+          color: 'var(--text-muted)',
+          padding: '8px 16px',
+          borderRadius: 'var(--radius-md)',
+          minWidth: '150px'
+        }}
+      >
         <span className="pulsing-dot pulsing-dot--checkpointing" style={{ marginRight: '8px', display: 'inline-block' }} />
         Connecting...
       </button>
     );
   }
 
-  // If connected but on the WRONG network (not Ritual Testnet 1979)
+  // Network mismatch (connected but to a wrong chain like Arbitrum Sepolia)
   if (isConnected && chainId !== ritualTestnet.id) {
     return (
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
-          className="btn btn-primary"
+          className="btn"
           onClick={handleSwitchNetwork}
           style={{
-            background: 'linear-gradient(135deg, #ef4444 0%, #8b5cf6 100%)',
-            borderColor: '#ef4444',
-            boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
+            background: 'linear-gradient(135deg, #ef4444 0%, #a855f7 100%)',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)',
             color: 'white',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-md)',
+            border: 'none',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.35)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'none';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.25)';
           }}
         >
           ⚠️ Switch to Ritual
@@ -62,7 +87,13 @@ export default function WalletConnectBtn() {
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => disconnect()}
-          style={{ fontSize: '12px' }}
+          style={{ 
+            fontSize: '12px',
+            padding: '6px 12px',
+            background: 'transparent',
+            borderColor: 'var(--glass-border)',
+            color: 'var(--text-secondary)'
+          }}
         >
           Disconnect
         </button>
@@ -70,59 +101,104 @@ export default function WalletConnectBtn() {
     );
   }
 
+  // Connected state
   if (isConnected && address) {
     return (
       <div className="dropdown" ref={dropdownRef} style={{ position: 'relative' }}>
         <button
-          className="btn btn-secondary"
+          className="btn"
           onClick={() => setDropdownOpen(!dropdownOpen)}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             background: 'var(--glass-bg)',
-            borderColor: 'var(--accent-primary)',
+            border: '1px solid var(--glass-border)',
             color: 'var(--text-primary)',
-            boxShadow: 'var(--shadow-glow)',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent-primary)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+          }}
+          onMouseLeave={(e) => {
+            if (!dropdownOpen) {
+              e.currentTarget.style.borderColor = 'var(--glass-border)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+            }
           }}
         >
-          <span className="pulsing-dot pulsing-dot--active" style={{ display: 'inline-block' }} />
-          {truncateAddress(address)}
-          <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+          <span className="pulsing-dot pulsing-dot--active" style={{ display: 'inline-block', width: '8px', height: '8px' }} />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500 }}>
+            {truncateAddress(address)}
+          </span>
+          <span style={{ 
+            fontSize: '9px', 
+            color: 'var(--text-muted)',
+            marginLeft: '4px',
+            transition: 'transform 0.2s ease', 
+            transform: dropdownOpen ? 'rotate(180deg)' : 'none' 
+          }}>
+            ▼
+          </span>
         </button>
 
         {dropdownOpen && (
           <div
-            className="glass-card-static"
+            className="glass-card-static animate-scale-in"
             style={{
               position: 'absolute',
-              top: '100%',
+              top: 'calc(100% + 8px)',
               right: 0,
-              marginTop: '8px',
-              minWidth: '200px',
+              minWidth: '220px',
               zIndex: 1000,
-              padding: '12px',
+              padding: '16px',
+              borderRadius: 'var(--radius-md)',
               boxShadow: 'var(--shadow-lg)',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--glass-bg)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px',
+              gap: '12px',
             }}
           >
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Connected Wallet
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                Active Wallet
+              </span>
+              <span style={{ 
+                fontFamily: 'var(--font-mono)', 
+                fontSize: '12px', 
+                color: 'var(--text-secondary)', 
+                wordBreak: 'break-all',
+                background: 'rgba(0,0,0,0.05)',
+                padding: '6px 8px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(0,0,0,0.03)'
+              }}>
+                {address}
+              </span>
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
-              {address}
-            </div>
+            
             <button
               className="btn btn-danger btn-sm"
               onClick={() => {
                 disconnect();
                 setDropdownOpen(false);
               }}
-              style={{ width: '100%', marginTop: '8px' }}
+              style={{ 
+                width: '100%', 
+                display: 'flex', 
+                justifyContent: 'center',
+                padding: '8px',
+                borderRadius: 'var(--radius-sm)'
+              }}
             >
-              Disconnect
+              🚪 Disconnect Wallet
             </button>
           </div>
         )}
@@ -130,6 +206,7 @@ export default function WalletConnectBtn() {
     );
   }
 
+  // Disconnected state
   return (
     <div className="dropdown" ref={dropdownRef} style={{ position: 'relative' }}>
       <button
@@ -139,6 +216,24 @@ export default function WalletConnectBtn() {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
+          padding: '8px 18px',
+          borderRadius: 'var(--radius-md)',
+          fontSize: '14px',
+          fontWeight: 600,
+          background: 'var(--gradient-primary)',
+          color: 'white',
+          boxShadow: 'var(--shadow-glow)',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(139, 92, 246, 0.45)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'none';
+          e.currentTarget.style.boxShadow = 'var(--shadow-glow)';
         }}
       >
         🔌 Connect Wallet
@@ -149,42 +244,61 @@ export default function WalletConnectBtn() {
           className="glass-card-static animate-scale-in"
           style={{
             position: 'absolute',
-            top: '100%',
+            top: 'calc(100% + 8px)',
             right: 0,
-            marginTop: '8px',
-            minWidth: '220px',
+            minWidth: '240px',
             zIndex: 1000,
             padding: '16px',
+            borderRadius: 'var(--radius-md)',
             boxShadow: 'var(--shadow-lg)',
+            border: '1px solid var(--glass-border)',
+            background: 'var(--glass-bg)',
             display: 'flex',
             flexDirection: 'column',
             gap: '10px',
           }}
         >
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-            Choose Wallet
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+            Select Provider
           </div>
           {connectors.map((connector) => (
             <button
               key={connector.id}
               onClick={() => handleConnect(connector)}
-              className="btn btn-secondary btn-sm"
+              className="btn"
               style={{
                 width: '100%',
                 justifyContent: 'flex-start',
                 textAlign: 'left',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '8px 12px',
+                gap: '10px',
+                padding: '10px 14px',
+                background: 'rgba(139, 92, 246, 0.05)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                fontWeight: 500
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.12)';
+                e.currentTarget.style.borderColor = 'var(--accent-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)';
+                e.currentTarget.style.borderColor = 'var(--glass-border)';
               }}
             >
-              <span>{connector.name === 'Injected' ? '🦊' : '🛡️'}</span>
-              {connector.name}
+              <span style={{ fontSize: '16px' }}>
+                {connector.name.toLowerCase().includes('injected') || connector.name.toLowerCase().includes('metamask') ? '🦊' : '🛡️'}
+              </span>
+              <span>{connector.name === 'Injected' ? 'Browser Wallet' : connector.name}</span>
             </button>
           ))}
           {error && (
-            <div style={{ color: 'var(--accent-danger)', fontSize: '11px', marginTop: '4px' }}>
+            <div style={{ color: 'var(--accent-danger)', fontSize: '11px', marginTop: '6px', textAlign: 'center' }}>
               {error.message}
             </div>
           )}
