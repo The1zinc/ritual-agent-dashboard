@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { truncateAddress } from '@/lib/utils';
+import { ritualTestnet } from '@/lib/web3/chains';
 
 export default function WalletConnectBtn() {
-  const { address, isConnected, isConnecting } = useAccount();
+  const { address, isConnected, isConnecting, chainId } = useAccount();
   const { connect, connectors, error } = useConnect();
   const { disconnect } = useDisconnect();
+  const { switchChain, error: switchError } = useSwitchChain();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -28,12 +30,43 @@ export default function WalletConnectBtn() {
     setDropdownOpen(false);
   };
 
+  const handleSwitchNetwork = () => {
+    switchChain({ chainId: ritualTestnet.id });
+  };
+
   if (isConnecting) {
     return (
       <button className="btn btn-secondary" disabled style={{ opacity: 0.8, minWidth: '150px' }}>
         <span className="pulsing-dot pulsing-dot--checkpointing" style={{ marginRight: '8px', display: 'inline-block' }} />
         Connecting...
       </button>
+    );
+  }
+
+  // If connected but on the WRONG network (not Ritual Testnet 1979)
+  if (isConnected && chainId !== ritualTestnet.id) {
+    return (
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSwitchNetwork}
+          style={{
+            background: 'linear-gradient(135deg, #ef4444 0%, #8b5cf6 100%)',
+            borderColor: '#ef4444',
+            boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
+            color: 'white',
+          }}
+        >
+          ⚠️ Switch to Ritual
+        </button>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={() => disconnect()}
+          style={{ fontSize: '12px' }}
+        >
+          Disconnect
+        </button>
+      </div>
     );
   }
 
