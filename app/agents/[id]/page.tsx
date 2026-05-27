@@ -1,8 +1,12 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAgents } from '@/lib/agents/store';
 import { AgentStatus } from '@/lib/agents/types';
+import { useAccount, useWriteContract, useConfig } from 'wagmi';
+import { waitForTransactionReceipt } from '@wagmi/core';
+import { AGENT_DASHBOARD_ABI } from '@/lib/web3/precompiles';
 import AgentStatusBadge from '@/components/agents/AgentStatusBadge';
 import AgentMetrics from '@/components/agents/AgentMetrics';
 import AgentLogFeed from '@/components/agents/AgentLogFeed';
@@ -11,8 +15,19 @@ import Link from 'next/link';
 
 export default function AgentDetailPage() {
   const params = useParams();
-  const { getAgent, updateAgentStatus } = useAgents();
+  const { getAgent, updateAgentStatus, refresh } = useAgents();
   const agent = getAgent(params.id as string);
+
+  // Poll for logs and metrics updates while actively viewing the dashboard
+  useEffect(() => {
+    if (!agent || agent.status === AgentStatus.Terminated) return;
+
+    const interval = setInterval(() => {
+      refresh();
+    }, 10000); // check for new logs/metrics every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [agent, refresh]);
 
   if (!agent) {
     return (
@@ -34,21 +49,61 @@ export default function AgentDetailPage() {
   const avatarBg = stringToColor(agent.soul.name);
   const initial = agent.soul.name.charAt(0).toUpperCase();
 
-  const handleAction = (action: string) => {
-    switch (action) {
-      case 'pause':
-        updateAgentStatus(agent.id, AgentStatus.Paused);
-        break;
-      case 'resume':
-        updateAgentStatus(agent.id, AgentStatus.Active);
-        break;
-      case 'checkpoint':
-        updateAgentStatus(agent.id, AgentStatus.Checkpointing);
-        setTimeout(() => updateAgentStatus(agent.id, AgentStatus.Active), 2000);
-        break;
-      case 'terminate':
-        updateAgentStatus(agent.id, AgentStatus.Terminated);
-        break;
+  const config = useConfig();
+  const { isConnected } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+
+  const handleAction = async (action: string) => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      const contractAddress = (process.env.NEXT_PUBLIC_DASHBOARD_CONTRACT_ADDRESS ||
+        '0xe54D597A8114f6e6Ea50D51bBFFC619A0A86c075') as `0x${string}`;
+      const onChainId = agent.address as `0x${string}`;
+
+      let functionName: 'pauseAgent' | 'resumeAgent' | 'checkpointAgent' | 'terminateAgent';
+      let targetStatus = AgentStatus.Active;
+
+      switch (action) {
+        case 'pause':
+          functionName = 'pauseAgent';
+          targetStatus = AgentStatus.Paused;
+          break;
+        case 'resume':
+          functionName = 'resumeAgent';
+          targetStatus = AgentStatus.Active;
+          break;
+        case 'checkpoint':
+          functionName = 'checkpointAgent';
+          targetStatus = AgentStatus.Checkpointing;
+          break;
+        case 'terminate':
+          functionName = 'terminateAgent';
+          targetStatus = AgentStatus.Terminated;
+          break;
+        default:
+          return;
+      }
+
+      // 1. Submit lifecycle update transaction to blockchain
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: AGENT_DASHBOARD_ABI,
+        functionName,
+        args: [onChainId],
+      });
+
+      // 2. Wait for transaction to be mined
+      await waitForTransactionReceipt(config, { hash: txHash });
+
+      // 3. Update agent status in Neon DB
+      await updateAgentStatus(agent.id, targetStatus);
+    } catch (err: any) {
+      console.error(`Failed to execute action ${action}:`, err);
+      alert(`Transaction failed: ${err.message || err}`);
     }
   };
 

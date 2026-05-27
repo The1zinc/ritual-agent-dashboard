@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAgents } from '@/lib/agents/store';
+import { useAccount, useWriteContract, useConfig } from 'wagmi';
+import { waitForTransactionReceipt } from '@wagmi/core';
+import { AGENT_DASHBOARD_ABI } from '@/lib/web3/precompiles';
+import { decodeEventLog } from 'viem';
 import {
   CreateAgentFormData,
   DEFAULT_SOUL,
@@ -60,12 +64,77 @@ export default function CreateAgentPage() {
     }
   };
 
+  const config = useConfig();
+  const { isConnected } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+
   const handleDeploy = async () => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
     setIsDeploying(true);
-    // Simulate a brief deployment delay
-    await new Promise((r) => setTimeout(r, 1500));
-    const agent = createAgent(formData);
-    router.push(`/agents/${agent.id}`);
+
+    try {
+      const contractAddress = (process.env.NEXT_PUBLIC_DASHBOARD_CONTRACT_ADDRESS ||
+        '0xe54D597A8114f6e6Ea50D51bBFFC619A0A86c075') as `0x${string}`;
+
+      // 1. Broadcast spawnAgent transaction on-chain
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: AGENT_DASHBOARD_ABI,
+        functionName: 'spawnAgent',
+        args: [
+          formData.soul.name,
+          formData.soul.purpose,
+          formData.soul.constraints || '',
+          '[]', // messagesJson
+          formData.soul.model || 'ritual-llm-v1',
+          BigInt(formData.memory.maxTokens || 4096),
+          formData.memory.type === 'persistent' ? 1 : 0,
+          formData.memory.initialKnowledge || '',
+          formData.storage.provider === 'ipfs' ? 0 : formData.storage.provider === 'gcs' ? 1 : 2,
+          BigInt(formData.storage.autoCheckpointInterval || 300),
+          70, // temperature (default 0.7)
+          formData.memory.conversationHistory ?? true,
+          formData.storage.restoreFromCid || '',
+        ],
+      });
+
+      // 2. Wait for transaction to be mined
+      const receipt = await waitForTransactionReceipt(config, { hash: txHash });
+
+      // 3. Extract agentId from logs
+      let agentId = `agent-${Date.now().toString(36)}`; // Fallback ID
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: AGENT_DASHBOARD_ABI,
+            eventName: 'AgentSpawned',
+            data: log.data,
+            topics: log.topics,
+          });
+          if (decoded.eventName === 'AgentSpawned') {
+            agentId = decoded.args.agentId;
+            break;
+          }
+        } catch {
+          // ignore logs from other events
+        }
+      }
+
+      // 4. Save metadata to Neon PostgreSQL database via API
+      const agent = await createAgent(formData, agentId);
+
+      // 5. Redirect to details dashboard
+      router.push(`/agents/${agent.id}`);
+    } catch (err: any) {
+      console.error('Failed to deploy agent:', err);
+      alert(`Deployment failed: ${err.message || err}`);
+    } finally {
+      setIsDeploying(false);
+    }
   };
 
   return (

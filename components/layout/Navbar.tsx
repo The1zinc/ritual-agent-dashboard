@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import WalletConnectBtn from './WalletConnectBtn';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -42,12 +42,9 @@ export default function Navbar() {
           <span className="pulsing-dot pulsing-dot--active" />
           Ritual Testnet
         </div>
-        <ConnectButton
-          showBalance={false}
-          chainStatus="icon"
-          accountStatus="avatar"
-        />
+        <WalletConnectBtn />
       </div>
     </nav>
   );
 }
+
